@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #character {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            user-select: none;
+        }
+
+        #enemy {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: green;
+            user-select: none;
+        }
+
+        #gun {
+            position: absolute;
+            width: 100px; /* Adjust the length of the gun as needed */
+            height: 10px; /* Adjust the width of the gun as needed */
+            background-color: gray;
+            display: none;
+            user-select: none;
+        }
+
+        .bullet {
+            position: absolute;
+            width: 10px;
+            height: 2px;
+            background-color: blue;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+<img id="character" src="baoanh.png" alt="character"/>
+<img id="enemy" src="gigachadQuys.jpg" alt="enemy">
+<div id="gun"></div>
+
+<script>
+    var character = document.getElementById("character");
+    var enemy = document.getElementById("enemy");
+    var gun = document.getElementById("gun");
+    var bullets = [];
+
+    var posX = window.innerWidth / 2 - 25; // 25 is half of the character's width
+    var posY = window.innerHeight / 2 - 25; // 25 is half of the character's height
+
+    var targetX = posX;
+    var targetY = posY;
+    var stepSize = 100;
+
+    var enemyPosX = -50; // Start outside the left border
+    var enemyPosY = Math.random() * window.innerHeight; // Random initial Y position
+    var enemyHealth = 25; // Enemy health
+
+    var bulletDamage = 1; // Bullet damage
+
+    function updateCharacter() {
+        var distanceX = targetX - posX;
+        var distanceY = targetY - posY;
+        var factor = Math.min(1, Math.sqrt(distanceX * distanceX + distanceY * distanceY) / 100);
+
+        posX += distanceX * factor;
+        posY += distanceY * factor;
+
+        character.style.left = posX + "px";
+        character.style.top = posY + "px";
+
+        requestAnimationFrame(updateCharacter);
+    }
+
+    function updateEnemy() {
+        var enemySpeed = 2;
+        var distanceX = posX - enemyPosX;
+        var distanceY = posY - enemyPosY;
+        var angle = Math.atan2(distanceY, distanceX);
+
+        enemyPosX += Math.cos(angle) * enemySpeed;
+        enemyPosY += Math.sin(angle) * enemySpeed;
+
+        enemy.style.left = enemyPosX + "px";
+        enemy.style.top = enemyPosY + "px";
+
+        // Check if enemy caught the character (you can adjust the condition)
+        if (
+            Math.abs(enemyPosX - posX) < 25 &&
+            Math.abs(enemyPosY - posY) < 25
+        ) {
+            alert("Game Over! The enemy caught you.");
+            resetGame();
+        }
+
+        requestAnimationFrame(updateEnemy);
+    }
+
+    function shootBullet(angle) {
+        var bullet = document.createElement("div");
+        bullet.className = "bullet";
+        document.body.appendChild(bullet);
+
+        var bulletPosX = posX + 25; // Adjust based on the gun's position
+        var bulletPosY = posY + 25; // Adjust based on the gun's position
+
+        bullet.style.left = bulletPosX + "px";
+        bullet.style.top = bulletPosY + "px";
+
+        var bulletSpeed = 10;
+        var bulletVelX = bulletSpeed * Math.cos(angle);
+        var bulletVelY = bulletSpeed * Math.sin(angle);
+
+        bullets.push({element: bullet, velX: bulletVelX, velY: bulletVelY});
+    }
+
+    function updateBullets() {
+        bullets.forEach(function (bullet, index) {
+            bullet.element.style.left =
+                parseFloat(bullet.element.style.left) + bullet.velX + "px";
+            bullet.element.style.top =
+                parseFloat(bullet.element.style.top) + bullet.velY + "px";
+
+            // Check for collision with enemy
+            if (
+                isCollision(
+                    bullet.element,
+                    enemy,
+                    bulletDamage
+                )
+            ) {
+                // Bullet hit the enemy, decrease enemy health
+                enemyHealth -= bulletDamage;
+
+                // Remove bullets that hit the enemy
+                document.body.removeChild(bullet.element);
+                bullets.splice(index, 1);
+
+                // Check if enemy health is zero
+                if (enemyHealth <= 0) {
+                    // Enemy defeated, reset the game
+                    alert("Enemy defeated! You win!");
+                    resetGame();
+                }
+            }
+
+            // Remove bullets that go off-screen
+            if (
+                parseFloat(bullet.element.style.left) < 0 ||
+                parseFloat(bullet.element.style.top) < 0 ||
+                parseFloat(bullet.element.style.left) > window.innerWidth ||
+                parseFloat(bullet.element.style.top) > window.innerHeight
+            ) {
+                document.body.removeChild(bullet.element);
+                bullets.splice(index, 1);
+            }
+        });
+
+        requestAnimationFrame(updateBullets);
+    }
+
+    function resetGame() {
+        posX = window.innerWidth / 2 - 25;
+        posY = window.innerHeight / 2 - 25;
+
+        enemyPosX = -50;
+        enemyPosY = Math.random() * window.innerHeight;
+        enemyHealth = 1;
+    }
+
+    // Function to check for collision between two elements
+    function isCollision(element1, element2, damage) {
+        var rect1 = element1.getBoundingClientRect();
+        var rect2 = element2.getBoundingClientRect();
+
+        return !(
+            rect1.right < rect2.left ||
+            rect1.left > rect2.right ||
+            rect1.bottom < rect2.top ||
+            rect1.top > rect2.bottom
+        );
+    }
+
+    document.addEventListener("keydown", function (event) {
+        var key = event.key.toLowerCase();
+
+        switch (key) {
+            case "arrowup":
+            case "w":
+                targetY -= stepSize;
+                break;
+            case "arrowdown":
+            case "s":
+                targetY += stepSize;
+                break;
+            case "arrowleft":
+            case "a":
+                targetX -= stepSize;
+                break;
+            case "arrowright":
+            case "d":
+                targetX += stepSize;
+                break;
+        }
+    });
+
+    document.addEventListener("mousedown", function (event) {
+        if (event.button === 0) {
+            // Left mouse button clicked
+            var mouseX = event.clientX;
+            var mouseY = event.clientY;
+
+            var angle = Math.atan2(mouseY - posY - 25, mouseX - posX - 25);
+            shootBullet(angle);
+        }
+    });
+
+    // Start the animation loops
+    updateCharacter();
+    updateEnemy();
+    updateBullets();
+    
+</script>
+</body>
+</html>
