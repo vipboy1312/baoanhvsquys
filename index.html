@@ -63,7 +63,7 @@
 
     var enemyPosX = -50; // Start outside the left border
     var enemyPosY = Math.random() * window.innerHeight; // Random initial Y position
-    var enemyHealth = 25; // Enemy health
+    var enemyHealth = 50; // Enemy health
 
     var bulletDamage = 1; // Bullet damage
 
@@ -82,7 +82,7 @@
     }
 
     function updateEnemy() {
-        var enemySpeed = 10;
+        var enemySpeed = 7;
         var distanceX = posX - enemyPosX;
         var distanceY = posY - enemyPosY;
         var angle = Math.atan2(distanceY, distanceX);
@@ -174,7 +174,7 @@
 
         enemyPosX = -50;
         enemyPosY = Math.random() * window.innerHeight;
-        enemyHealth = 1;
+        enemyHealth = 50;
     }
 
     // Function to check for collision between two elements
